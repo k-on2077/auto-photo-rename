@@ -2,6 +2,7 @@
 //
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <array>
@@ -9,6 +10,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <exiv2/exiv2.hpp>
+#include "FuncLib.h"
 
 namespace limit
 {
@@ -23,7 +25,7 @@ namespace cmd
     static const std::string name{ "name" };
 }
 
-static const std::vector<std::string> imgTypes{ ".jpg", ".jpeg", ".png", ".heic"};
+static const std::vector<std::string> imgFileExtens{ ".jpg", ".jpeg", ".png", ".heic"};
 
 void handleCmdExit();
 void handleCmdHelp();
@@ -62,18 +64,17 @@ int main(int argc, char* argv[])
             }
         }
 
-        if (cmdCount <= cmds.size())
+        if (cmdCount > 0 && cmdCount <= cmds.size())
         {
-            if (cmdCount == 1)
+            func::transform2Lower(cmds[0]);
+            
+            if (cmds[0] == cmd::exit || cmds[0] == cmd::quit)
             {
-                if (cmds[0] == cmd::exit || cmds[0] == cmd::quit)
-                {
-                    handleCmdExit();
-                }
-                else if (cmds[0] == cmd::help)
-                {
-                    handleCmdHelp();
-                }
+                handleCmdExit();
+            }
+            else if (cmds[0] == cmd::help)
+            {
+                handleCmdHelp();
             }
             else if (cmdCount == 2)
             {
@@ -123,74 +124,97 @@ void handleCmdRename(std::string dirPath)
 
     std::vector<std::string> images;
 
-    auto transHandle = [](char c) -> char
-    {
-        if (std::isalpha(c) && std::isupper(c))
-        {
-            return std::tolower(c);
-        }
-        else
-        {
-            return c;
-        }
-    };
-
     for (const auto& entry : fs::directory_iterator(dir))
     {
         if (entry.path().has_extension())
         {
-            auto extension = entry.path().extension().string();
-            std::cout << extension << std::endl;
-            std::transform(extension.begin(), extension.end(), extension.begin(), transHandle);
-            std::cout << extension << std::endl;
+            std::string exten = entry.path().extension().string();
+            func::transform2Lower(exten);
 
-            /*auto result = std::find(imgTypes.cbegin(), imgTypes.cend(), extension);
+            auto result = std::find(imgFileExtens.cbegin(), imgFileExtens.cend(), exten);
 
-            if (result != imgTypes.cend())
+            if (result != imgFileExtens.cend())
             {
                 images.emplace_back(entry.path().string());
-            }*/
+            }
         }
     }
 
-    for (auto& entry : images)
+    //for (auto& entry : images)
+    //{
+    //    std::cout << entry << std::endl;
+    //    try
+    //    {
+    //        Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open("IMG_4689.HEIC");
+    //        if (!image.get()) {
+    //            continue;
+    //        }
+
+    //        image->readMetadata();
+
+    //        Exiv2::ExifData& exifData = image->exifData();
+    //        if (exifData.empty())
+    //        {
+    //            std::cerr << "no EXIF data" << std::endl;
+    //        }
+
+    //        //Exiv2::Exifdatum time = exifData["Exif.Photo.DateTimeOriginal"];
+    //        //if (time.count())
+    //        //{
+    //        //    std::cout << time.toString() << std::endl;
+    //        //}
+
+    //        // 打印所有EXIF键值对
+    //        for (auto const& tag : exifData) {
+    //            std::cout << tag.key() << ": " << tag.toString() << std::endl;
+    //        }
+    //    }
+    //    catch (Exiv2::Error& e)
+    //    {
+    //        std::cerr << "Caught Exiv2 exception: " << e.what() << std::endl;
+    //        return;
+    //    }
+    //    catch (...)
+    //    {
+    //        std::cerr << "Caught unknown exception" << std::endl;
+    //        return;
+    //    }
+    //}
+
+    try
     {
-        //std::cout << entry << std::endl;
-        //try
-        //{
-        //    Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open(entry);
-        //    if (!image.get()) {
-        //        continue;
-        //    }
+        Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open("IMG_4689.HEIC");
+        if (!image.get()) {
+            return;
+        }
 
-        //    image->readMetadata();
+        image->readMetadata();
 
-        //    Exiv2::ExifData& exifData = image->exifData();
-        //    if (exifData.empty())
-        //    {
-        //        std::cerr << "no EXIF data" << std::endl;
-        //    }
+        Exiv2::ExifData& exifData = image->exifData();
+        if (exifData.empty())
+        {
+            std::cerr << "no EXIF data" << std::endl;
+        }
 
-        //    //Exiv2::Exifdatum time = exifData["Exif.Photo.DateTimeOriginal"];
-        //    //if (time.count())
-        //    //{
-        //    //    std::cout << time.toString() << std::endl;
-        //    //}
+        Exiv2::Exifdatum time = exifData["Exif.Photo.DateTimeOriginal"];
+        if (time.count())
+        {
+            std::cout << time.toString() << std::endl;
+        }
 
-        //    //// 打印所有EXIF键值对
-        //    //for (auto const& tag : exifData) {
-        //    //    std::cout << tag.key() << ": " << tag.toString() << std::endl;
-        //    //}
-        //}
-        //catch (Exiv2::Error& e)
-        //{
-        //    std::cerr << "Caught Exiv2 exception: " << e.what() << std::endl;
-        //    return;
-        //}
-        //catch (...)
-        //{
-        //    std::cerr << "Caught unknown exception" << std::endl;
-        //    return;
-        //}
+        // 打印所有EXIF键值对
+        for (auto const& tag : exifData) {
+            std::cout << tag.key() << ": " << tag.toString() << std::endl;
+        }
+    }
+    catch (Exiv2::Error& e)
+    {
+        std::cerr << "Caught Exiv2 exception: " << e.what() << std::endl;
+        return;
+    }
+    catch (...)
+    {
+        std::cerr << "Caught unknown exception" << std::endl;
+        return;
     }
 }
