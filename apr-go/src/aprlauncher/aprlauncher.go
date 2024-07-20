@@ -51,11 +51,21 @@ func main() {
 }
 
 func printHelp() {
-	fmt.Println("1. input help to get command instruction;")
-	fmt.Println("2. input exit or quit to stop;")
-	fmt.Println("3. input name [folder path] to rename all photos in the specific folder;")
+	fmt.Printf("Usage:\n")
+	fmt.Printf("- input [help] to get command instruction;\n")
+	fmt.Printf("- input [exit] or [quit] to stop;\n")
+	fmt.Printf("- input [name] [folder path] to rename all photos in the specific folder;\n\n")
+	fmt.Printf("please input command:\n")
 }
 
 func processRename(dir string) {
-	imgtool.RenameImgByTime(dir)
+	err := imgtool.RenameImgByTime(dir)
+	if err != nil {
+		fmt.Printf("rename error: %v\n", err)
+	} else {
+		fmt.Printf("rename success\n")
+	}
+
+	fmt.Printf("\n")
+	fmt.Println("please input command:")
 }

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <exiv2/exiv2.hpp>
+#include <regex>
 #include "FuncLib.h"
 
 namespace limit
@@ -33,6 +34,9 @@ void handleCmdRename(std::string dirPath);
 
 int main(int argc, char* argv[])
 {
+    setlocale(LC_CTYPE, ".utf8");
+
+    std::cout << "Usage:\n";
     std::cout << "1. input help to get command instruction;\n";
     std::cout << "2. input exit or quit to stop;\n";
     std::cout << "3. input name [folder path] to rename all photos in the specific folder;\n";
@@ -80,6 +84,33 @@ int main(int argc, char* argv[])
             {
                 if (cmds[0] == cmd::name)
                 {
+                    const char* file = "IMG_20230311_171906.jpg";
+                    auto image = Exiv2::ImageFactory::open(file);
+                    //Exiv2::Image::UniquePtr image = Exiv2::ImageFactory::open("IMG_20230311_171906.jpg");
+                    if (!image.get())
+                    {
+                        std::cerr << "open failed" << std::endl;
+                    }
+
+                    image->readMetadata();
+
+                    Exiv2::ExifData& exifData = image->exifData();
+                    if (exifData.empty())
+                    {
+                        std::cerr << "no EXIF data" << std::endl;
+                    }
+
+                    //Exiv2::Exifdatum time = exifData["Exif.Photo.DateTimeOriginal"];
+                    //if (time.count())
+                    //{
+                    //    std::cout << time.toString() << std::endl;
+                    //}
+
+                    // 打印所有EXIF键值对
+                    for (auto const& tag : exifData) {
+                        std::cout << tag.key() << ": " << tag.toString() << std::endl;
+                    }
+
                     handleCmdRename(cmds[1]);
                 }
             }
