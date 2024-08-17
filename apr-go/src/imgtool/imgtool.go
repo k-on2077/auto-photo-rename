@@ -2,6 +2,7 @@ package imgtool
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"runtime"
 	"strings"
@@ -23,26 +24,32 @@ func RenameImgByTime(dir string) error {
 	extens := []string{"jpg", "jpeg", "png", "heic"}
 	records := make([]*RenameRecord, 0)
 
+	var fileDir string
+	if runtime.GOOS == "windows" {
+		fileDir = dir + "\\"
+	} else {
+		fileDir = dir + "/"
+	}
+
+	existNames := make(map[string]int, 0)
 	for _, file := range files {
-		fileName := strings.ToLower(file.Name())
-		exts := strings.Split(fileName, ".")
+		existNames[fileDir+file.Name()] = 1
+		existNames[fileDir+strings.ToLower(file.Name())] = 1
+	}
+
+	for _, file := range files {
+		lowerFileName := strings.ToLower(file.Name())
+		exts := strings.Split(lowerFileName, ".")
 		if len(exts) < 2 {
 			continue
 		}
 
 		fileExten := exts[len(exts)-1]
-		if !strings.HasSuffix(fileName, fileExten) || !contains(extens, fileExten) {
+		if !strings.HasSuffix(lowerFileName, fileExten) || !contains(extens, fileExten) {
 			continue
 		}
 
-		var fileDir string
-		if runtime.GOOS == "windows" {
-			fileDir = dir + "\\"
-		} else {
-			fileDir = dir + "/"
-		}
-
-		oldName := fileDir + fileName
+		oldName := fileDir + file.Name()
 		originalTime, err := getFileExifTime(oldName)
 		if err != nil {
 			continue
@@ -50,8 +57,19 @@ func RenameImgByTime(dir string) error {
 
 		newName := fileDir + "IMG_" + originalTime.Format("20060102_150405") + "." + fileExten
 		if newName == oldName {
-			newName = fileDir + "IMG_" + originalTime.Format("20060102_150405") + "1." + fileExten
+			continue
 		}
+
+		// check if the new name already exists
+		if _, ok := existNames[newName]; ok {
+			for i := 1; i < 10000; i++ {
+				newName = fileDir + "IMG_" + originalTime.Format("20060102_150405") + fmt.Sprintf("_%v", i) + "." + fileExten
+				if _, ok := existNames[newName]; !ok {
+					break
+				}
+			}
+		}
+		existNames[newName] = 1
 
 		err = os.Rename(oldName, newName)
 		if err != nil {
