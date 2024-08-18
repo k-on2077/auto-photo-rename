@@ -9,7 +9,7 @@ import (
 	"github.com/dsoprea/go-exif/v3"
 )
 
-func getFileExifTime(filePath string) (time.Time, error) {
+func GetImgCreationTime(filePath string) (time.Time, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return time.Now(), err
