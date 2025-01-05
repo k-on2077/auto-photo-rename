@@ -32,10 +32,13 @@ func GetVideoCreationTime(filePath string) (time.Time, error) {
 		return time.Now(), jsonError
 	}
 
-	creationTime, timeError := time.Parse("2006-01-02T15:04:05.000000Z", data.Format.Tags.CreationTime)
+	creationTime, timeError := time.Parse(time.RFC3339, data.Format.Tags.CreationTime)
 	if timeError != nil {
 		return time.Now(), timeError
 	}
-
-	return creationTime, nil
+	eightZone, zoneError := time.LoadLocation("Asia/Shanghai")
+	if zoneError != nil {
+		return time.Now(), zoneError
+	}
+	return creationTime.UTC().In(eightZone), nil
 }
